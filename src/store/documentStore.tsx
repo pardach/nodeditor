@@ -6,6 +6,7 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
+import { produce } from "immer";
 import { defaultRegistry } from "../core/nodes/registry";
 import type { GraphDocument, GraphNode, GraphValue, NodeId, NodeType } from "../core/types/graph";
 import type { Vec2 } from "../core/types/primitives";
@@ -116,75 +117,65 @@ const documentReducer = (state: DocumentHistoryState, action: ReducerAction): Do
 };
 
 const applyCommand = (document: GraphDocument, command: DocumentCommand): GraphDocument => {
-  switch (command.kind) {
-    case "select-node":
-      return touchDocument({
-        ...document,
-        view: {
-          ...document.view,
-          selectedNodeIds: [command.nodeId],
-          selectedEdgeIds: [],
-        },
-      });
-    case "update-node-parameter": {
-      const node = document.nodes[command.nodeId];
-      if (!node) {
-        return document;
+  return produce(document, (draft) => {
+    switch (command.kind) {
+      case "select-node": {
+        const isAlreadySelected =
+          draft.view.selectedNodeIds.length === 1 &&
+          draft.view.selectedNodeIds[0] === command.nodeId &&
+          draft.view.selectedEdgeIds.length === 0;
+        if (isAlreadySelected) {
+          return;
+        }
+
+        draft.view.selectedNodeIds = [command.nodeId];
+        draft.view.selectedEdgeIds = [];
+        markDocumentUpdated(draft);
+        return;
       }
+      case "update-node-parameter": {
+        const node = draft.nodes[command.nodeId];
+        if (!node) {
+          return;
+        }
 
-      return touchDocument({
-        ...document,
-        nodes: {
-          ...document.nodes,
-          [node.id]: {
-            ...node,
-            parameters: {
-              ...node.parameters,
-              [command.parameterId]: command.value,
-            },
-          },
-        },
-      });
-    }
-    case "move-node": {
-      const node = document.nodes[command.nodeId];
-      if (!node) {
-        return document;
+        if (Object.is(node.parameters[command.parameterId], command.value)) {
+          return;
+        }
+
+        node.parameters[command.parameterId] = command.value;
+        markDocumentUpdated(draft);
+        return;
       }
+      case "move-node": {
+        const node = draft.nodes[command.nodeId];
+        if (!node) {
+          return;
+        }
 
-      return touchDocument({
-        ...document,
-        nodes: {
-          ...document.nodes,
-          [node.id]: {
-            ...node,
-            position: command.position,
-          },
-        },
-      });
-    }
-    case "add-node": {
-      const definition = defaultRegistry[command.nodeType];
-      if (!definition) {
-        return document;
+        const { x, y } = command.position;
+        if (node.position.x === x && node.position.y === y) {
+          return;
+        }
+
+        node.position = command.position;
+        markDocumentUpdated(draft);
+        return;
       }
+      case "add-node": {
+        const definition = defaultRegistry[command.nodeType];
+        if (!definition) {
+          return;
+        }
 
-      const node = createGraphNode(command.nodeType, command.position);
-
-      return touchDocument({
-        ...document,
-        nodes: {
-          ...document.nodes,
-          [node.id]: node,
-        },
-        view: {
-          ...document.view,
-          selectedNodeIds: [node.id],
-          selectedEdgeIds: [],
-        },
-      });
+        const node = createGraphNode(command.nodeType, command.position);
+        draft.nodes[node.id] = node;
+        draft.view.selectedNodeIds = [node.id];
+        draft.view.selectedEdgeIds = [];
+        markDocumentUpdated(draft);
+      }
     }
-  }
+  });
 };
 
 const createGraphNode = (nodeType: NodeType, position: Vec2): GraphNode => {
@@ -202,13 +193,9 @@ const createGraphNode = (nodeType: NodeType, position: Vec2): GraphNode => {
   };
 };
 
-const touchDocument = (document: GraphDocument): GraphDocument => ({
-  ...document,
-  metadata: {
-    ...document.metadata,
-    updatedAt: new Date().toISOString(),
-  },
-});
+const markDocumentUpdated = (document: GraphDocument): void => {
+  document.metadata.updatedAt = new Date().toISOString();
+};
 
 const createId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
