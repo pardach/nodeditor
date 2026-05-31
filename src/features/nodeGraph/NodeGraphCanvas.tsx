@@ -53,8 +53,8 @@ export const NodeGraphCanvas = ({ evaluation }: NodeGraphCanvasProps) => {
     [document.edges, document.view.selectedEdgeIds],
   );
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(flowNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(flowEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState<FlowGraphNode>(flowNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(flowEdges);
 
   useEffect(() => {
     setNodes(flowNodes);

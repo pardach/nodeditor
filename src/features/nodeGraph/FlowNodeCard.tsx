@@ -2,10 +2,10 @@ import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { getNodeDefinition } from "../../core/nodes/registry";
 import type { EvaluationDiagnostic, GraphNode } from "../../core/types/graph";
 
-export interface FlowNodeCardData {
+export type FlowNodeCardData = Record<string, unknown> & {
   graphNode: GraphNode;
   diagnostics: EvaluationDiagnostic[];
-}
+};
 
 export type FlowGraphNode = Node<FlowNodeCardData, "graph-node">;
 
