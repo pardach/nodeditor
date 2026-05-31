@@ -1,3 +1,4 @@
+import { applyToPoint, compose, rotateDEG, scale, translate, type Matrix } from "transformation-matrix";
 import type {
   Color,
   GeometryCollection,
@@ -50,17 +51,26 @@ export const applyFill = (geometry: GeometryCollection, fill: Color): GeometryCo
   })),
 });
 
-export const transformGeometry = (geometry: GeometryCollection, transform: Transform): GeometryCollection => ({
-  shapes: geometry.shapes.map((shape) => ({
-    ...shape,
-    path: transformPath(shape.path, transform),
-  })),
-});
+export const transformGeometry = (geometry: GeometryCollection, transform: Transform): GeometryCollection => {
+  const matrix = transformToMatrix(transform);
 
-export const transformPath = (path: VectorPath, transform: Transform): VectorPath => ({
-  ...path,
-  commands: path.commands.map((command) => transformCommand(command, transform)),
-});
+  return {
+    shapes: geometry.shapes.map((shape) => ({
+      ...shape,
+      path: transformPathWithMatrix(shape.path, matrix),
+    })),
+  };
+};
+
+export const transformPath = (path: VectorPath, transform: Transform): VectorPath =>
+  transformPathWithMatrix(path, transformToMatrix(transform));
+
+export const transformToMatrix = (transform: Transform): Matrix =>
+  compose(
+    translate(transform.translate.x, transform.translate.y),
+    rotateDEG(transform.rotate),
+    scale(transform.scale.x, transform.scale.y),
+  );
 
 export const pathToSvgD = (path: VectorPath): string =>
   path.commands
@@ -91,34 +101,35 @@ export const colorToCss = (color: Color | undefined, fallback = "transparent"): 
   )})`;
 };
 
-const transformCommand = (command: PathCommand, transform: Transform): PathCommand => {
+const transformPathWithMatrix = (path: VectorPath, matrix: Matrix): VectorPath => ({
+  ...path,
+  commands: path.commands.map((command) => transformCommand(command, matrix)),
+});
+
+const transformCommand = (command: PathCommand, matrix: Matrix): PathCommand => {
   switch (command.kind) {
     case "move":
-      return { ...command, to: transformPoint(command.to, transform) };
+      return { ...command, to: transformPoint(command.to, matrix) };
     case "line":
-      return { ...command, to: transformPoint(command.to, transform) };
+      return { ...command, to: transformPoint(command.to, matrix) };
     case "cubic":
       return {
         ...command,
-        cp1: transformPoint(command.cp1, transform),
-        cp2: transformPoint(command.cp2, transform),
-        to: transformPoint(command.to, transform),
+        cp1: transformPoint(command.cp1, matrix),
+        cp2: transformPoint(command.cp2, matrix),
+        to: transformPoint(command.to, matrix),
       };
     case "close":
       return command;
   }
 };
 
-const transformPoint = (point: Vec2, transform: Transform): Vec2 => {
-  const scaledX = point.x * transform.scale.x;
-  const scaledY = point.y * transform.scale.y;
-  const radians = (transform.rotate * Math.PI) / 180;
-  const cos = Math.cos(radians);
-  const sin = Math.sin(radians);
+const transformPoint = (point: Vec2, matrix: Matrix): Vec2 => {
+  const transformed = applyToPoint(matrix, point);
 
   return {
-    x: scaledX * cos - scaledY * sin + transform.translate.x,
-    y: scaledX * sin + scaledY * cos + transform.translate.y,
+    x: transformed.x,
+    y: transformed.y,
   };
 };
 
