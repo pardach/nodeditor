@@ -33,3 +33,11 @@ npm run build
 3. پشتیبانی از سایزبندی لباس، گریدینگ و چند آرت‌بورد هم‌زمان.
 4. پیاده‌سازی nodeهای وکتوری مثل offset path، boolean، scatter، tiling و brush روی مسیر.
 5. خروجی دقیق SVG/PDF با واحدهای چاپی، bleed، registration mark و metadata دستگاه.
+
+## معماری
+
+برای نگاه عمیق‌تر به الهام از Houdini، Blender Geometry Nodes و Substance Designer،
+و اینکه این ایده‌ها چگونه به مدل سند، node registry، evaluation engine، geometry core،
+viewport و export pipeline تبدیل می‌شوند، سند زیر را ببینید:
+
+- [docs/architecture.md](docs/architecture.md)
