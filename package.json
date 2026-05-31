@@ -1,0 +1,43 @@
+{
+  "name": "nodeditor",
+  "version": "1.0.0",
+  "description": "A React architecture scaffold for a procedural 2D vector node editor.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pardach/nodeditor.git"
+  },
+  "keywords": [
+    "node-editor",
+    "vector-graphics",
+    "react",
+    "procedural-design"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pardach/nodeditor/issues"
+  },
+  "homepage": "https://github.com/pardach/nodeditor#readme",
+  "dependencies": {
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "jsdom": "^29.1.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
+  }
+}
