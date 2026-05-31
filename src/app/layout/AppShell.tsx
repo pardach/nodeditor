@@ -51,7 +51,11 @@ export const AppShell = () => {
             </div>
             <span className="status-pill">{evaluation.outputGeometry.shapes.length} shape(s)</span>
           </div>
-          <VectorViewport geometry={evaluation.outputGeometry} diagnostics={evaluation.diagnostics} />
+          <VectorViewport
+            geometry={evaluation.outputGeometry}
+            diagnostics={evaluation.diagnostics}
+            documentTitle={document.title}
+          />
         </section>
 
         <aside className="panel panel--inspector">

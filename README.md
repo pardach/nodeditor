@@ -41,4 +41,9 @@ npm run build
 
 ## وضعیت فعلی
 
-این نسخه یک vertical slice معماری است: یک گراف نمونه‌ی `Rectangle -> Transform -> Fill -> Output` ارزیابی می‌شود، خروجی در SVG viewport دیده می‌شود، پارامترها از Inspector تغییر می‌کنند و undo/redo از طریق command history کار می‌کند.
+این نسخه یک vertical slice معماری است:
+
+- گراف نمونه‌ی `Rectangle -> Transform -> Fill -> Output` ارزیابی می‌شود.
+- **Node Graph** با کتابخانه‌ی **React Flow** رندر می‌شود (drag، اتصال socketها و pan/zoom).
+- خروجی در SVG viewport دیده می‌شود و **Import/Export فایل SVG** هم پشتیبانی می‌شود.
+- پارامترها از Inspector تغییر می‌کنند و undo/redo از طریق command history کار می‌کند.

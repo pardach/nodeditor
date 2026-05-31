@@ -8,7 +8,7 @@ import {
 } from "react";
 import { produce } from "immer";
 import { defaultRegistry } from "../core/nodes/registry";
-import type { GraphDocument, GraphNode, GraphValue, NodeId, NodeType } from "../core/types/graph";
+import type { EdgeId, GraphDocument, GraphEdge, GraphNode, GraphValue, NodeId, NodeType } from "../core/types/graph";
 import type { Vec2 } from "../core/types/primitives";
 import { createSampleDocument } from "./sampleDocument";
 
@@ -16,7 +16,15 @@ export type DocumentCommand =
   | { kind: "select-node"; nodeId: NodeId }
   | { kind: "update-node-parameter"; nodeId: NodeId; parameterId: string; value: GraphValue }
   | { kind: "move-node"; nodeId: NodeId; position: Vec2 }
-  | { kind: "add-node"; nodeType: NodeType; position: Vec2 };
+  | { kind: "add-node"; nodeType: NodeType; position: Vec2 }
+  | {
+      kind: "connect-nodes";
+      sourceNodeId: NodeId;
+      sourceSocketId: string;
+      targetNodeId: NodeId;
+      targetSocketId: string;
+    }
+  | { kind: "set-view"; zoom: number; pan: Vec2 };
 
 interface DocumentHistoryState {
   past: GraphDocument[];
@@ -81,6 +89,13 @@ const documentReducer = (state: DocumentHistoryState, action: ReducerAction): Do
       const nextDocument = applyCommand(state.present, action.command);
       if (nextDocument === state.present) {
         return state;
+      }
+
+      if (action.command.kind === "set-view") {
+        return {
+          ...state,
+          present: nextDocument,
+        };
       }
 
       return {
@@ -173,6 +188,56 @@ const applyCommand = (document: GraphDocument, command: DocumentCommand): GraphD
         draft.view.selectedNodeIds = [node.id];
         draft.view.selectedEdgeIds = [];
         markDocumentUpdated(draft);
+        return;
+      }
+      case "connect-nodes": {
+        const sourceNode = draft.nodes[command.sourceNodeId];
+        const targetNode = draft.nodes[command.targetNodeId];
+        if (!sourceNode || !targetNode) {
+          return;
+        }
+
+        const hasSameConnection = Object.values(draft.edges).some(
+          (edge) =>
+            edge.sourceNodeId === command.sourceNodeId &&
+            edge.sourceSocketId === command.sourceSocketId &&
+            edge.targetNodeId === command.targetNodeId &&
+            edge.targetSocketId === command.targetSocketId,
+        );
+        if (hasSameConnection) {
+          return;
+        }
+
+        const replacedEdgeIds = Object.values(draft.edges)
+          .filter(
+            (edge) => edge.targetNodeId === command.targetNodeId && edge.targetSocketId === command.targetSocketId,
+          )
+          .map((edge) => edge.id);
+
+        replacedEdgeIds.forEach((edgeId) => {
+          delete draft.edges[edgeId];
+        });
+
+        const newEdge = createGraphEdge(command);
+        draft.edges[newEdge.id] = newEdge;
+        draft.view.selectedNodeIds = [command.targetNodeId];
+        draft.view.selectedEdgeIds = [newEdge.id];
+        markDocumentUpdated(draft);
+        return;
+      }
+      case "set-view": {
+        const isSameView =
+          draft.view.zoom === command.zoom &&
+          draft.view.pan.x === command.pan.x &&
+          draft.view.pan.y === command.pan.y;
+        if (isSameView) {
+          return;
+        }
+
+        draft.view.zoom = command.zoom;
+        draft.view.pan = command.pan;
+        markDocumentUpdated(draft);
+        return;
       }
     }
   });
@@ -195,6 +260,23 @@ const createGraphNode = (nodeType: NodeType, position: Vec2): GraphNode => {
 
 const markDocumentUpdated = (document: GraphDocument): void => {
   document.metadata.updatedAt = new Date().toISOString();
+};
+
+const createGraphEdge = (connection: {
+  sourceNodeId: NodeId;
+  sourceSocketId: string;
+  targetNodeId: NodeId;
+  targetSocketId: string;
+}): GraphEdge => {
+  const id = `edge:${connection.sourceNodeId}:${connection.sourceSocketId}:${connection.targetNodeId}:${connection.targetSocketId}:${createId()}`;
+
+  return {
+    id,
+    sourceNodeId: connection.sourceNodeId,
+    sourceSocketId: connection.sourceSocketId,
+    targetNodeId: connection.targetNodeId,
+    targetSocketId: connection.targetSocketId,
+  };
 };
 
 const createId = () =>
