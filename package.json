@@ -28,15 +28,21 @@
   },
   "homepage": "https://github.com/pardach/nodeditor#readme",
   "dependencies": {
+    "@xyflow/react": "^12.10.2",
+    "colord": "^2.9.3",
+    "file-saver": "^2.0.5",
     "immer": "^11.1.8",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "svg-path-parser": "^1.1.0",
     "transformation-matrix": "^3.1.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
+    "@types/svg-path-parser": "^1.1.6",
     "@vitejs/plugin-react": "^6.0.2",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
